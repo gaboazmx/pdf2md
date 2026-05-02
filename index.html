@@ -351,37 +351,6 @@
     </h2>
     <div class="options-grid">
       <div class="option-group">
-        <label>Categoría del corpus</label>
-        <select id="selCategoria">
-          <option value="">— Sin categoría —</option>
-          <option value="Z Legislacion">Z Legislacion</option>
-          <option value="ZZ-1 PRUEBAS">ZZ-1 PRUEBAS</option>
-          <option value="X-1 Normas compliance">X-1 Normas compliance</option>
-          <option value="01 Contencioso administrativo">01 Contencioso administrativo</option>
-          <option value="01-1 IMSS">01-1 IMSS</option>
-          <option value="01-2 INFONAVIT">01-2 INFONAVIT</option>
-          <option value="01-3 STPS">01-3 STPS</option>
-          <option value="03 Seguridad social">03 Seguridad social</option>
-          <option value="03-1 Pensiones">03-1 Pensiones</option>
-          <option value="04 Derecho laboral">04 Derecho laboral</option>
-          <option value="04-1 REPSE y subcontratacion">04-1 REPSE y subcontratacion</option>
-          <option value="04-2 Compliance laboral">04-2 Compliance laboral</option>
-          <option value="05 CFF">05 CFF</option>
-          <option value="05-1 Compliance tributario">05-1 Compliance tributario</option>
-          <option value="05-2 RMF">05-2 RMF</option>
-          <option value="06 Derecho corporativo">06 Derecho corporativo</option>
-          <option value="07 Capacitacion">07 Capacitacion</option>
-          <option value="08-Fiscalizacion algortimica">08-Fiscalizacion algortimica</option>
-          <option value="X Doctrina y libros">X Doctrina y libros</option>
-          <option value="Y PRECEDENTES">Y PRECEDENTES</option>
-          <option value="ZZ Argumentacion">ZZ Argumentacion</option>
-          <option value="METODOLOGIA DE RIESGOS">METODOLOGIA DE RIESGOS</option>
-          <option value="Z-1 RENTA">Z-1 RENTA</option>
-          <option value="z-z VALORES ECONOMICOS ANUALES">z-z VALORES ECONOMICOS ANUALES</option>
-          <option value="0 Casos">0 Casos</option>
-        </select>
-      </div>
-      <div class="option-group">
         <label>Prefijo del archivo de salida</label>
         <input type="text" id="txtPrefijo" placeholder="Ej: CFF_2025_" value="">
       </div>
@@ -565,7 +534,6 @@ function setProgress(done, total, text) {
 async function pdfToMarkdown(file) {
   const ab   = await file.arrayBuffer();
   const pdf  = await pdfjsLib.getDocument({ data: ab }).promise;
-  const cat  = document.getElementById('selCategoria').value;
   const pre  = document.getElementById('txtPrefijo').value.trim();
   const chkH = document.getElementById('chkEncabezados').checked;
   const chkN = document.getElementById('chkNumeracion').checked;
@@ -580,7 +548,6 @@ async function pdfToMarkdown(file) {
     const info = meta.info || {};
     lines.push('---');
     lines.push(`fuente: "${file.name}"`);
-    if (cat)        lines.push(`categoria: "${cat}"`);
     if (info.Title) lines.push(`titulo: "${info.Title}"`);
     if (info.Author)lines.push(`autor: "${info.Author}"`);
     lines.push(`paginas: ${pdf.numPages}`);
