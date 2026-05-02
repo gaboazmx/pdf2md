@@ -1,9 +1,130 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" prefix="og: https://ogp.me/ns#">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF → Markdown | RAG Builder</title>
+
+<!-- ══ SEO PRIMARIO ══════════════════════════════════════════════ -->
+<title>Convertir PDF a Markdown Gratis Online | RAG Builder Jurídico</title>
+<meta name="description" content="Convierte PDFs con texto seleccionable a Markdown limpio en segundos, directo en tu navegador. Sin subir archivos a servidores. Ideal para corpus RAG, investigación jurídica y documentación legal. Herramienta gratuita creada por Gabriel Aranda Zamacona.">
+<meta name="keywords" content="convertir PDF a Markdown, PDF to Markdown gratis, PDF Markdown online, herramienta RAG jurídico, corpus RAG, PDF abogado, Markdown jurídico, convertir PDF texto, RAG builder, PDF sin servidor">
+<meta name="author" content="Gabriel Aranda Zamacona">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<link rel="canonical" href="https://pdftomd.abogadocorporativo.mx/">
+<meta name="language" content="Spanish">
+<meta name="geo.region" content="MX">
+<meta name="geo.country" content="Mexico">
+
+<!-- ══ OPEN GRAPH (Facebook, LinkedIn, WhatsApp) ════════════════ -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pdftomd.abogadocorporativo.mx/">
+<meta property="og:title" content="Convertir PDF a Markdown Gratis | RAG Builder Jurídico">
+<meta property="og:description" content="Convierte PDFs a Markdown limpio en segundos, 100% en tu navegador. Sin subir archivos. Ideal para corpus RAG y documentación legal.">
+<meta property="og:locale" content="es_MX">
+<meta property="og:site_name" content="PDF → Markdown RAG Builder">
+<meta property="og:image" content="https://pdftomd.abogadocorporativo.mx/profile.jpg">
+<meta property="og:image:alt" content="Gabriel Aranda Zamacona — Abogado Corporativo y Estratega Legal con IA">
+<meta property="og:image:width" content="197">
+<meta property="og:image:height" content="189">
+
+<!-- ══ TWITTER CARD ══════════════════════════════════════════════ -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Convertir PDF a Markdown Gratis | RAG Builder Jurídico">
+<meta name="twitter:description" content="Convierte PDFs a Markdown limpio en segundos, 100% en tu navegador. Sin subir archivos. Ideal para corpus RAG y documentación legal.">
+<meta name="twitter:creator" content="@gaboarandalex">
+<meta name="twitter:image" content="https://pdftomd.abogadocorporativo.mx/profile.jpg">
+<meta name="twitter:image:alt" content="Gabriel Aranda Zamacona — Abogado Corporativo y Estratega Legal con IA">
+
+<!-- ══ SCHEMA.ORG — SoftwareApplication ════════════════════════ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PDF → Markdown RAG Builder",
+  "url": "https://pdftomd.abogadocorporativo.mx/",
+  "description": "Herramienta web gratuita que convierte PDFs con texto seleccionable a Markdown limpio, 100% local en el navegador del usuario. Diseñada para la construcción de corpus RAG jurídicos.",
+  "applicationCategory": "UtilitiesApplication",
+  "applicationSubCategory": "DocumentConverter",
+  "operatingSystem": "Web Browser",
+  "browserRequirements": "Requires JavaScript. Chrome, Edge, Firefox, Safari.",
+  "inLanguage": "es-MX",
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "MXN"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Gabriel Aranda Zamacona",
+    "url": "https://abogadocorporativo.mx",
+    "jobTitle": "Abogado Corporativo · Litigante Contencioso Administrativo · Estratega Legal con IA",
+    "sameAs": [
+      "https://www.linkedin.com/in/gabriel-aranda-zamacona/",
+      "https://abogadocorporativo.mx",
+      "https://lexgradibus.com",
+      "https://x.com/gaboarandalex"
+    ],
+    "image": "https://pdftomd.abogadocorporativo.mx/profile.jpg"
+  },
+  "featureList": [
+    "Conversión PDF a Markdown 100% local",
+    "Detección automática de encabezados jurídicos (ARTÍCULO, CAPÍTULO, TÍTULO)",
+    "Generación de metadatos YAML",
+    "Descarga individual o en lote",
+    "Compatible con corpus RAG",
+    "Sin subida de archivos a servidores"
+  ],
+  "keywords": "PDF a Markdown, convertidor PDF, RAG jurídico, corpus legal, Markdown gratis"
+}
+</script>
+
+<!-- ══ SCHEMA.ORG — FAQPage (fragmentos enriquecidos) ══════════ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "¿Cómo convertir un PDF a Markdown gratis?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Arrastra tu PDF a esta herramienta gratuita y haz clic en 'Convertir a Markdown'. El proceso ocurre 100% en tu navegador, sin subir archivos a ningún servidor. En segundos obtienes un archivo .md listo para descargar."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Se suben mis archivos PDF a algún servidor?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Esta herramienta procesa los archivos completamente en tu navegador usando PDF.js. Ningún documento es enviado, almacenado ni procesado en servidores externos. Tus archivos permanecen en tu computadora en todo momento."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Para qué sirve convertir un PDF a Markdown?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "El formato Markdown es ideal para indexar documentos en sistemas RAG (Retrieval-Augmented Generation), bases de conocimiento, wikis y documentación técnica o jurídica. Permite que los modelos de lenguaje (IA) lean y procesen el contenido con mayor precisión."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "¿Funciona con PDFs escaneados?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Esta herramienta requiere PDFs con texto seleccionable. Para PDFs escaneados o basados en imagen, usa el convertidor OCR disponible en pdf-ocr-rag.onrender.com, que aplica reconocimiento óptico de caracteres (Tesseract)."
+      }
+    }
+  ]
+}
+</script>
+
+<!-- ══ PERFORMANCE ══════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root {
@@ -298,6 +419,18 @@
   }
   footer a { color: var(--azul-med); text-decoration: none; }
   footer a:hover { text-decoration: underline; }
+
+  /* ── TIPOGRAFÍA: títulos centrados · texto justificado ── */
+  header h1, header p { text-align: center; }
+  .card h2, .card h3  { text-align: center; }
+  .aviso-legal h3     { text-align: center; }
+  .aviso-legal p,
+  .aviso-legal li     { text-align: justify; }
+  .info-box           { text-align: justify; }
+  #previewRendered h1,
+  #previewRendered h2,
+  #previewRendered h3 { text-align: center; }
+  #previewRendered p  { text-align: justify; }
 </style>
 </head>
 <body>
@@ -311,22 +444,11 @@
   </svg>
   <div>
     <h1>PDF → Markdown &nbsp;|&nbsp; RAG Builder</h1>
-    <p>Convierte PDFs a Markdown limpio para indexar en tu corpus jurídico</p>
+    <p>Convierte PDFs a Markdown limpio gratis — 100% en tu navegador, sin subir archivos</p>
   </div>
 </header>
 
 <main>
-
-  <!-- BANNER OCR -->
-  <div style="background:#fff3cd;border:1.5px solid #ffc107;border-radius:8px;padding:13px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:14px;color:#7a5800;">
-    <span style="font-size:20px">🔍</span>
-    <span><strong>¿Tu PDF es escaneado o basado en imagen?</strong> Esta app solo extrae texto seleccionable.
-    Para PDFs escaneados usa el convertidor OCR (Tesseract).</span>
-    <a href="https://pdf-ocr-rag.onrender.com" target="_blank"
-       style="margin-left:auto;background:#1F4E79;color:#fff;border-radius:6px;padding:8px 16px;text-decoration:none;font-weight:600;font-size:13px;white-space:nowrap;">
-      Ir al OCR ↗
-    </a>
-  </div>
 
   <!-- INFO -->
   <div class="info-box">
