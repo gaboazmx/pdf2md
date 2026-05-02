@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF → Markdown | RAG Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --azul:     #1F4E79;
+    --azul-med: #2E75B6;
+    --azul-clr: #D5E8F0;
+    --verde:    #375623;
+    --verde-clr:#E2EFDA;
+    --gris:     #F5F5F5;
+    --gris-med: #CCCCCC;
+    --texto:    #1A1A1A;
+    --blanco:   #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #F0F4F8;
+    color: var(--texto);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--azul);
+    color: var(--blanco);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header svg { flex-shrink: 0; }
+  header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.5px; }
+  header p  { font-size: 0.82rem; opacity: 0.8; margin-top: 2px; }
+
+  /* ── LAYOUT ── */
+  main {
+    max-width: 960px;
+    margin: 32px auto;
+    padding: 0 20px;
+    display: grid;
+    gap: 24px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--blanco);
+    border-radius: 12px;
+    padding: 28px 32px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  }
+  .card h2 {
+    font-size: 1rem;
+    color: var(--azul);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── DROP ZONE ── */
+  #dropzone {
+    border: 2.5px dashed var(--azul-med);
+    border-radius: 10px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--azul-clr);
+  }
+  #dropzone:hover, #dropzone.dragover {
+    background: #C2DFF0;
+    border-color: var(--azul);
+  }
+  #dropzone .icon { font-size: 3rem; margin-bottom: 12px; }
+  #dropzone p     { color: var(--azul); font-weight: 600; font-size: 1rem; }
+  #dropzone small { color: #666; font-size: 0.82rem; margin-top: 6px; display: block; }
+  #fileInput { display: none; }
+
+  /* ── OPCIONES ── */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media(max-width:600px){ .options-grid { grid-template-columns: 1fr; } }
+
+  .option-group label {
+    display: block;
+    font-size: 0.82rem;
+    color: #555;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+  .option-group select,
+  .option-group input[type=text] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid var(--gris-med);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--texto);
+    background: var(--blanco);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .option-group select:focus,
+  .option-group input[type=text]:focus {
+    border-color: var(--azul-med);
+  }
+
+  .checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .checkbox-group input { width: 16px; height: 16px; accent-color: var(--azul-med); }
+  .checkbox-group label { font-size: 0.88rem; color: #444; cursor: pointer; }
+
+  /* ── BOTÓN ── */
+  #btnConvert {
+    width: 100%;
+    padding: 14px;
+    background: var(--azul-med);
+    color: var(--blanco);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    letter-spacing: 0.5px;
+  }
+  #btnConvert:hover:not(:disabled) { background: var(--azul); }
+  #btnConvert:disabled { background: var(--gris-med); cursor: not-allowed; }
+
+  /* ── PROGRESO ── */
+  #progressWrap { display: none; }
+  #progressBar {
+    height: 8px;
+    background: var(--gris-med);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  #progressFill {
+    height: 100%;
+    background: var(--azul-med);
+    width: 0%;
+    transition: width 0.3s;
+    border-radius: 4px;
+  }
+  #progressText { font-size: 0.82rem; color: #666; text-align: center; }
+
+  /* ── COLA DE ARCHIVOS ── */
+  #fileList { list-style: none; }
+  #fileList li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: var(--gris);
+    font-size: 0.88rem;
+    border: 1.5px solid transparent;
+    transition: all 0.2s;
+  }
+  #fileList li.done   { background: var(--verde-clr); border-color: #A9D18E; }
+  #fileList li.error  { background: #FFE6E6; border-color: #FF9999; }
+  #fileList li.active { background: var(--azul-clr); border-color: var(--azul-med); }
+  #fileList .fname    { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #fileList .fsize    { color: #888; font-size: 0.78rem; flex-shrink: 0; }
+  #fileList .fstatus  { font-size: 0.82rem; flex-shrink: 0; }
+  #fileList .btn-dl {
+    background: var(--verde);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #fileList .btn-dl:hover { background: var(--azul); }
+  #fileList .btn-rm {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #999;
+    font-size: 1rem;
+    flex-shrink: 0;
+    padding: 0 4px;
+  }
+  #fileList .btn-rm:hover { color: #cc0000; }
+
+  /* ── VISTA PREVIA ── */
+  #previewWrap { display: none; }
+  #previewTabs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tab-btn {
+    padding: 6px 16px;
+    border: 1.5px solid var(--gris-med);
+    border-radius: 6px;
+    background: var(--blanco);
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #555;
+    transition: all 0.2s;
+  }
+  .tab-btn.active { background: var(--azul-med); color: white; border-color: var(--azul-med); }
+
+  #previewMd {
+    font-family: 'Cascadia Code', 'Courier New', monospace;
+    font-size: 0.82rem;
+    background: #1E1E1E;
+    color: #D4D4D4;
+    padding: 20px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  #previewRendered {
+    padding: 20px;
+    border: 1.5px solid var(--gris-med);
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    line-height: 1.7;
+    font-size: 0.9rem;
+    display: none;
+  }
+  #previewRendered h1,h2,h3 { color: var(--azul); margin: 12px 0 6px; }
+  #previewRendered p { margin-bottom: 8px; }
+  #previewRendered code { background: var(--gris); padding: 2px 6px; border-radius: 3px; font-family: monospace; }
+
+  .preview-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .preview-actions button {
+    padding: 8px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  #btnDownloadAll {
+    background: var(--azul-med);
+    color: white;
+  }
+  #btnDownloadAll:hover { background: var(--azul); }
+  #btnCopyMd {
+    background: var(--gris);
+    color: var(--texto);
+    border: 1.5px solid var(--gris-med) !important;
+  }
+  #btnCopyMd:hover { background: #e0e0e0; }
+
+  /* ── INFO BOX ── */
+  .info-box {
+    background: var(--azul-clr);
+    border-left: 4px solid var(--azul-med);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--azul);
+    line-height: 1.6;
+  }
+  .info-box strong { display: block; margin-bottom: 4px; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: #888;
+    font-size: 0.78rem;
+  }
+  footer a { color: var(--azul-med); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+    <rect width="36" height="36" rx="8" fill="white" fill-opacity="0.15"/>
+    <path d="M8 10h20M8 18h14M8 26h10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="28" cy="24" r="6" fill="#4EC9B0"/>
+    <path d="M25 24l2 2 4-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div>
+    <h1>PDF → Markdown &nbsp;|&nbsp; RAG Builder</h1>
+    <p>Convierte PDFs a Markdown limpio para indexar en tu corpus jurídico</p>
+  </div>
+</header>
+
+<main>
+
+  <!-- INFO -->
+  <div class="info-box">
+    <strong>ℹ️ ¿Cómo funciona?</strong>
+    Sube uno o varios PDFs con texto seleccionable (no escaneados). La app extrae el contenido, lo limpia y genera archivos <code>.md</code> listos para meter en cualquier carpeta de <code>corpus\</code> e indexar con <code>python indexar.py</code>.
+  </div>
+
+  <!-- ZONA DE CARGA -->
+  <div class="card">
+    <h2>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Subir PDFs
+    </h2>
+    <div id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <div class="icon">📄</div>
+      <p>Arrastra los PDFs aquí o haz clic para seleccionar</p>
+      <small>Admite múltiples archivos · Solo PDF con texto seleccionable</small>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf" multiple>
+    <ul id="fileList" style="margin-top:16px;"></ul>
+  </div>
+
+  <!-- OPCIONES -->
+  <div class="card">
+    <h2>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      Opciones de conversión
+    </h2>
+    <div class="options-grid">
+      <div class="option-group">
+        <label>Categoría del corpus</label>
+        <select id="selCategoria">
+          <option value="">— Sin categoría —</option>
+          <option value="Z Legislacion">Z Legislacion</option>
+          <option value="ZZ-1 PRUEBAS">ZZ-1 PRUEBAS</option>
+          <option value="X-1 Normas compliance">X-1 Normas compliance</option>
+          <option value="01 Contencioso administrativo">01 Contencioso administrativo</option>
+          <option value="01-1 IMSS">01-1 IMSS</option>
+          <option value="01-2 INFONAVIT">01-2 INFONAVIT</option>
+          <option value="01-3 STPS">01-3 STPS</option>
+          <option value="03 Seguridad social">03 Seguridad social</option>
+          <option value="03-1 Pensiones">03-1 Pensiones</option>
+          <option value="04 Derecho laboral">04 Derecho laboral</option>
+          <option value="04-1 REPSE y subcontratacion">04-1 REPSE y subcontratacion</option>
+          <option value="04-2 Compliance laboral">04-2 Compliance laboral</option>
+          <option value="05 CFF">05 CFF</option>
+          <option value="05-1 Compliance tributario">05-1 Compliance tributario</option>
+          <option value="05-2 RMF">05-2 RMF</option>
+          <option value="06 Derecho corporativo">06 Derecho corporativo</option>
+          <option value="07 Capacitacion">07 Capacitacion</option>
+          <option value="08-Fiscalizacion algortimica">08-Fiscalizacion algortimica</option>
+          <option value="X Doctrina y libros">X Doctrina y libros</option>
+          <option value="Y PRECEDENTES">Y PRECEDENTES</option>
+          <option value="ZZ Argumentacion">ZZ Argumentacion</option>
+          <option value="METODOLOGIA DE RIESGOS">METODOLOGIA DE RIESGOS</option>
+          <option value="Z-1 RENTA">Z-1 RENTA</option>
+          <option value="z-z VALORES ECONOMICOS ANUALES">z-z VALORES ECONOMICOS ANUALES</option>
+          <option value="0 Casos">0 Casos</option>
+        </select>
+      </div>
+      <div class="option-group">
+        <label>Prefijo del archivo de salida</label>
+        <input type="text" id="txtPrefijo" placeholder="Ej: CFF_2025_" value="">
+      </div>
+      <div class="option-group">
+        <label>Opciones de limpieza</label>
+        <div class="checkbox-group">
+          <input type="checkbox" id="chkEncabezados" checked>
+          <label for="chkEncabezados">Detectar encabezados (ARTÍCULO, CAPÍTULO, TÍTULO)</label>
+        </div>
+        <div class="checkbox-group" style="margin-top:6px">
+          <input type="checkbox" id="chkNumeracion" checked>
+          <label for="chkNumeracion">Limpiar números de página</label>
+        </div>
+      </div>
+      <div class="option-group">
+        <label>Metadatos en el archivo</label>
+        <div class="checkbox-group">
+          <input type="checkbox" id="chkMeta" checked>
+          <label for="chkMeta">Agregar bloque de metadatos al inicio</label>
+        </div>
+        <div class="checkbox-group" style="margin-top:6px">
+          <input type="checkbox" id="chkFecha" checked>
+          <label for="chkFecha">Incluir fecha de conversión</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONVERTIR -->
+  <button id="btnConvert" disabled>Convertir a Markdown</button>
+
+  <!-- PROGRESO -->
+  <div class="card" id="progressWrap">
+    <div id="progressBar"><div id="progressFill"></div></div>
+    <div id="progressText">Procesando...</div>
+  </div>
+
+  <!-- VISTA PREVIA -->
+  <div class="card" id="previewWrap">
+    <h2>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Vista previa — <span id="previewFileName"></span>
+    </h2>
+    <div id="previewTabs">
+      <button class="tab-btn active" onclick="switchTab('raw')">Markdown</button>
+      <button class="tab-btn" onclick="switchTab('rendered')">Renderizado</button>
+    </div>
+    <pre id="previewMd"></pre>
+    <div id="previewRendered"></div>
+    <div class="preview-actions">
+      <button id="btnDownloadAll">⬇ Descargar todos los .md</button>
+      <button id="btnCopyMd" onclick="copyMd()">📋 Copiar Markdown</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <p>PDF → Markdown RAG Builder · Despacho Gabriel Aranda Zamacona ·
+  <a href="https://github.com/gaboazmx" target="_blank">github.com/gaboazmx</a></p>
+</footer>
+
+<script>
+// ── PDF.js worker ──────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── Estado ────────────────────────────────────────────────────────
+let files    = [];   // { file, name, size, status, md, error }
+let lastMd   = '';
+let lastFile = '';
+
+// ── Drag & Drop ───────────────────────────────────────────────────
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('dragover');
+  addFiles([...e.dataTransfer.files].filter(f => f.type === 'application/pdf'));
+});
+document.getElementById('fileInput').addEventListener('change', e => {
+  addFiles([...e.target.files]);
+  e.target.value = '';
+});
+
+function addFiles(newFiles) {
+  newFiles.forEach(f => {
+    if (!files.find(x => x.name === f.name && x.size === f.size)) {
+      files.push({ file: f, name: f.name, size: f.size, status: 'pending', md: '', error: '' });
+    }
+  });
+  renderFileList();
+  document.getElementById('btnConvert').disabled = files.length === 0;
+}
+
+function removeFile(idx) {
+  files.splice(idx, 1);
+  renderFileList();
+  document.getElementById('btnConvert').disabled = files.length === 0;
+  if (files.length === 0) {
+    document.getElementById('previewWrap').style.display = 'none';
+  }
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(1) + ' MB';
+}
+
+function renderFileList() {
+  const ul = document.getElementById('fileList');
+  ul.innerHTML = '';
+  files.forEach((f, i) => {
+    const li = document.createElement('li');
+    li.className = f.status === 'done' ? 'done' : f.status === 'error' ? 'error' : f.status === 'active' ? 'active' : '';
+    const icon = f.status === 'done' ? '✅' : f.status === 'error' ? '❌' : f.status === 'active' ? '⏳' : '📄';
+    li.innerHTML = `
+      <span>${icon}</span>
+      <span class="fname">${f.name}</span>
+      <span class="fsize">${fmtSize(f.size)}</span>
+      <span class="fstatus">${f.status === 'error' ? f.error : ''}</span>
+      ${f.status === 'done'
+        ? `<button class="btn-dl" onclick="downloadOne(${i})">⬇ .md</button>
+           <button class="btn-dl" onclick="previewOne(${i})" style="background:#2E75B6">👁 Ver</button>`
+        : ''}
+      ${f.status !== 'active'
+        ? `<button class="btn-rm" onclick="removeFile(${i})" title="Quitar">✕</button>`
+        : ''}
+    `;
+    ul.appendChild(li);
+  });
+}
+
+// ── Conversión ────────────────────────────────────────────────────
+document.getElementById('btnConvert').addEventListener('click', convertAll);
+
+async function convertAll() {
+  const btn = document.getElementById('btnConvert');
+  btn.disabled = true;
+
+  const pw = document.getElementById('progressWrap');
+  pw.style.display = 'block';
+
+  const pending = files.filter(f => f.status === 'pending' || f.status === 'error');
+  let done = 0;
+
+  for (const item of pending) {
+    item.status = 'active';
+    renderFileList();
+    setProgress(done, pending.length, `Procesando: ${item.name}`);
+
+    try {
+      item.md     = await pdfToMarkdown(item.file);
+      item.status = 'done';
+    } catch(e) {
+      item.status = 'error';
+      item.error  = e.message.substring(0, 40);
+    }
+    done++;
+    renderFileList();
+  }
+
+  setProgress(done, pending.length, '✓ Conversión completada');
+  btn.disabled = false;
+
+  const firstDone = files.find(f => f.status === 'done');
+  if (firstDone) previewOne(files.indexOf(firstDone));
+
+  document.getElementById('btnDownloadAll').addEventListener('click', downloadAll);
+}
+
+function setProgress(done, total, text) {
+  const pct = total === 0 ? 100 : Math.round(done / total * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = text;
+}
+
+// ── PDF → Markdown ────────────────────────────────────────────────
+async function pdfToMarkdown(file) {
+  const ab   = await file.arrayBuffer();
+  const pdf  = await pdfjsLib.getDocument({ data: ab }).promise;
+  const cat  = document.getElementById('selCategoria').value;
+  const pre  = document.getElementById('txtPrefijo').value.trim();
+  const chkH = document.getElementById('chkEncabezados').checked;
+  const chkN = document.getElementById('chkNumeracion').checked;
+  const chkM = document.getElementById('chkMeta').checked;
+  const chkF = document.getElementById('chkFecha').checked;
+
+  let lines = [];
+
+  // Metadatos
+  if (chkM) {
+    const meta = await pdf.getMetadata().catch(() => ({}));
+    const info = meta.info || {};
+    lines.push('---');
+    lines.push(`fuente: "${file.name}"`);
+    if (cat)        lines.push(`categoria: "${cat}"`);
+    if (info.Title) lines.push(`titulo: "${info.Title}"`);
+    if (info.Author)lines.push(`autor: "${info.Author}"`);
+    lines.push(`paginas: ${pdf.numPages}`);
+    if (chkF)       lines.push(`conversion: "${new Date().toLocaleDateString('es-MX')}"`);
+    lines.push('---');
+    lines.push('');
+  }
+
+  // Extraer texto página por página
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page    = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const items   = content.items;
+
+    let pageText = '';
+    let lastY    = null;
+
+    for (const item of items) {
+      if (!item.str.trim()) continue;
+      const y = item.transform[5];
+      if (lastY !== null && Math.abs(y - lastY) > 5) pageText += '\n';
+      pageText += item.str + ' ';
+      lastY = y;
+    }
+
+    // Limpiar números de página
+    if (chkN) {
+      pageText = pageText.replace(/^\s*\d+\s*$/gm, '');
+      pageText = pageText.replace(/\n\s*Página\s+\d+\s*\n/gi, '\n');
+    }
+
+    // Detectar encabezados jurídicos y convertirlos a Markdown
+    if (chkH) {
+      pageText = pageText
+        .replace(/^(TÍTULO\s+[IVXLCDM\d]+[\.\s].*)/gmi,   '\n## $1')
+        .replace(/^(CAPÍTULO\s+[IVXLCDM\d]+[\.\s].*)/gmi, '\n## $1')
+        .replace(/^(SECCIÓN\s+[IVXLCDM\d]+[\.\s].*)/gmi,  '\n### $1')
+        .replace(/^(ARTÍCULO\s+\d+[\.\-\s].*)/gmi,        '\n#### $1')
+        .replace(/^(ARTICULO\s+\d+[\.\-\s].*)/gmi,        '\n#### $1')
+        .replace(/^(Art\.\s+\d+[\.\-\s].*)/gmi,           '\n#### $1')
+        .replace(/^(FRACCIÓN\s+[IVXLCDM\d]+[\.\s].*)/gmi, '\n##### $1');
+    }
+
+    // Normalizar espacios múltiples y líneas vacías
+    pageText = pageText
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\n{4,}/g, '\n\n\n')
+      .trim();
+
+    if (pageText) {
+      lines.push(pageText);
+      lines.push('');
+    }
+  }
+
+  return lines.join('\n').replace(/\n{4,}/g, '\n\n\n').trim();
+}
+
+// ── Descarga ──────────────────────────────────────────────────────
+function getOutputName(item) {
+  const pre = document.getElementById('txtPrefijo').value.trim();
+  const base = item.name.replace(/\.pdf$/i, '');
+  return (pre + base + '.md').replace(/[<>:"/\\|?*]/g, '_');
+}
+
+function downloadOne(idx) {
+  const item = files[idx];
+  const blob = new Blob([item.md], { type: 'text/markdown;charset=utf-8' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = getOutputName(item);
+  a.click();
+}
+
+function downloadAll() {
+  files.filter(f => f.status === 'done').forEach((_, i) => {
+    const real = files.indexOf(files.filter(f => f.status === 'done')[i]);
+    setTimeout(() => downloadOne(real), i * 300);
+  });
+}
+
+// ── Vista previa ─────────────────────────────────────────────────
+function previewOne(idx) {
+  const item = files[idx];
+  lastMd     = item.md;
+  lastFile   = getOutputName(item);
+
+  document.getElementById('previewWrap').style.display = 'block';
+  document.getElementById('previewFileName').textContent = lastFile;
+  document.getElementById('previewMd').textContent = item.md.substring(0, 6000) +
+    (item.md.length > 6000 ? '\n\n... (vista previa limitada a 6000 caracteres)' : '');
+  renderMarkdown(item.md.substring(0, 6000));
+
+  document.getElementById('previewWrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderMarkdown(md) {
+  let html = md
+    .replace(/^#### (.+)$/gm,  '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm,   '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,    '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,     '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+    .replace(/`(.+?)`/g,       '<code>$1</code>')
+    .replace(/^---$/gm,        '<hr>')
+    .replace(/\n\n/g,          '</p><p>')
+    .replace(/\n/g,            '<br>');
+  document.getElementById('previewRendered').innerHTML = '<p>' + html + '</p>';
+}
+
+function switchTab(tab) {
+  const raw = document.getElementById('previewMd');
+  const ren = document.getElementById('previewRendered');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (tab === 'raw') {
+    raw.style.display = 'block';
+    ren.style.display = 'none';
+    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+  } else {
+    raw.style.display = 'none';
+    ren.style.display = 'block';
+    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+  }
+}
+
+function copyMd() {
+  navigator.clipboard.writeText(lastMd).then(() => {
+    const btn = document.getElementById('btnCopyMd');
+    btn.textContent = '✅ Copiado';
+    setTimeout(() => btn.textContent = '📋 Copiar Markdown', 2000);
+  });
+}
+</script>
+</body>
+</html>
