@@ -270,6 +270,12 @@
     border: 1.5px solid var(--gris-med) !important;
   }
   #btnCopyMd:hover { background: #e0e0e0; }
+  #btnSaveFolder {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1.5px solid #a5d6a7 !important;
+  }
+  #btnSaveFolder:hover { background: #c8e6c9; }
 
   /* ── INFO BOX ── */
   .info-box {
@@ -403,6 +409,17 @@
     <div class="preview-actions">
       <button id="btnDownloadAll">⬇ Descargar todos los .md</button>
       <button id="btnCopyMd" onclick="copyMd()">📋 Copiar Markdown</button>
+      <button id="btnSaveFolder" onclick="saveToFolder()" title="Guarda el archivo directo en la carpeta del corpus">📁 Guardar en carpeta...</button>
+    </div>
+
+    <!-- BANNER RAG -->
+    <div id="ragBanner" style="display:none;margin-top:18px;background:#fff9c4;border:1.5px solid #f9a825;border-radius:8px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;">
+      <span style="font-size:22px;flex-shrink:0;">🗂️</span>
+      <div style="font-size:13px;color:#5d4037;line-height:1.6;">
+        <strong>¿Estás creando o actualizando tu corpus RAG?</strong><br>
+        Dime en qué carpeta vas a colocar este archivo.
+        También puedes usar el botón <strong>"Guardar en carpeta..."</strong> para enviarlo directo a la carpeta del corpus sin pasar por Descargas.
+      </div>
     </div>
   </div>
 
@@ -541,7 +558,10 @@ async function convertAll() {
   btn.disabled = false;
 
   const firstDone = files.find(f => f.status === 'done');
-  if (firstDone) previewOne(files.indexOf(firstDone));
+  if (firstDone) {
+    previewOne(files.indexOf(firstDone));
+    mostrarBannerRag();
+  }
 
   document.getElementById('btnDownloadAll').addEventListener('click', downloadAll);
 }
@@ -702,6 +722,49 @@ function copyMd() {
     btn.textContent = '✅ Copiado';
     setTimeout(() => btn.textContent = '📋 Copiar Markdown', 2000);
   });
+}
+
+// ── Guardar directo en carpeta (File System Access API) ──────────
+async function saveToFolder() {
+  if (!lastMd) { alert('No hay contenido para guardar.'); return; }
+
+  // Comprobar soporte del navegador
+  if (!window.showSaveFilePicker) {
+    // Fallback: descarga normal si el navegador no soporta la API
+    const blob = new Blob([lastMd], { type: 'text/markdown' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = lastFile || 'documento.md';
+    a.click();
+    return;
+  }
+
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: lastFile || 'documento.md',
+      types: [{
+        description: 'Markdown',
+        accept: { 'text/markdown': ['.md'] }
+      }]
+    });
+    const writable = await handle.createWritable();
+    await writable.write(lastMd);
+    await writable.close();
+
+    const btn = document.getElementById('btnSaveFolder');
+    btn.textContent = '✅ Guardado';
+    setTimeout(() => btn.textContent = '📁 Guardar en carpeta...', 2500);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      alert('No se pudo guardar: ' + err.message);
+    }
+  }
+}
+
+// ── Mostrar banner RAG al terminar la primera conversión ─────────
+function mostrarBannerRag() {
+  const banner = document.getElementById('ragBanner');
+  if (banner) banner.style.display = 'flex';
 }
 </script>
 </body>
